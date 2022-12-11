@@ -54,7 +54,7 @@ df1['Time_taken(min)'] = df1['Time_taken(min)'].astype(int)
 # Barra lateral
 # ====================================
 
-st.header('Marketplace - Visão Cliente')
+st.header('Marketplace - Visão Empresa')
 
 # image_path = 'logo.png'
 # image = Image.open(image_path)
