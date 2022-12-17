@@ -4,85 +4,126 @@ import pandas as pd
 import plotly.express as px
 import os
 import streamlit as st
+from datetime import datetime
 from haversine import haversine
 from PIL import Image
 from streamlit_folium import folium_static
+
+# ==================================
+# Funções
+# ==================================
+
+def sidebar():
+    image_path = 'logo.png'
+    image = Image.open(image_path)
+    st.sidebar.image(image,width=120)
+    
+    st.sidebar.markdown('# Cury Company')
+    st.sidebar.markdown('## Fastest Delivery un Town')
+    st.sidebar.markdown("""---""")
+
+    st.sidebar.markdown("## Selecione uma data limite")
+
+    date_slider = st.sidebar.slider(
+                    'Até qual valor?',
+                    value=datetime(2022,4,6),
+                    min_value=datetime(2022,2,11),
+                    max_value=datetime(2022,4,13),
+                    format='DD-MM-YYYY')
+
+    st.sidebar.markdown("""---""")
+
+    traffic_options = st.sidebar.multiselect(
+                        'Quais as condiçoes de trânsito',
+                        ['Low', 'Medium', 'High', 'Jam'], 
+                        default=['Low', 'Medium', 'High', 'Jam'])
+
+    st.sidebar.markdown("""---""")
+    st.sidebar.markdown('### Powered by Comunidade DS')
+    
+    return date_slider, traffic_options
+
+def clean_code(df1):
+    """Esta função tem a responsabilidadede limpar o dataframe 
+
+        Tips de Limpeza:
+        1. Remoção dos dados NaN
+        2. Mudança do tipo da coluna de dados
+        3. Remoção dos espaços da variaveis de texto
+        4. Formatação da coluna de datas
+        5. Limpeza da culuna de tempo (remoção do texto da variável numérica)
+
+        Input: Dataframe
+        Output: Dataframe
+    """
+
+    # 1. convertendo a coluna Age de texto para numero
+    linhas_selecionadas = df1['Delivery_person_Age'] != 'NaN '
+    df1 = df1.loc[linhas_selecionadas, :].copy()
+
+    df1['Delivery_person_Age'] = df1['Delivery_person_Age'].astype(int)
+
+    # 2. convertendo a coluna Ratings de texto para numero decimal (float)
+    df1['Delivery_person_Ratings'] = df1['Delivery_person_Ratings'].astype(float)
+
+    # 3. convertendo a coluna order_date de texto para data
+    df1['Order_Date'] = pd.to_datetime(df1['Order_Date'], format='%d-%m-%Y')
+
+    # 4. convertendo multiple_deliveries de texto para numero inteiro (int)
+    linhas_selecionadas = df1['multiple_deliveries'] != 'NaN '
+    df1 = df1.loc[linhas_selecionadas, :].copy()
+
+    df1['multiple_deliveries'] = df1['multiple_deliveries'].astype(int)
+
+
+    # 5. Removendo os espacos dentro de strings/texto/object
+    df1.loc[:, 'ID'] = df1.loc[:, 'ID'].str.strip()
+    df1.loc[:, 'Road_traffic_density'] = df1.loc[:, 'Road_traffic_density'].str.strip()
+    df1.loc[:, 'Type_of_order'] = df1.loc[:, 'Type_of_order'].str.strip()
+    df1.loc[:, 'Type_of_vehicle'] = df1.loc[:, 'Type_of_vehicle'].str.strip()
+    df1.loc[:, 'City'] = df1.loc[:, 'City'].str.strip()
+    df1.loc[:, 'Festival'] = df1.loc[:, 'Festival'].str.strip()
+
+    # 6. Removend do NaN
+    df1 = df1.loc[df1['Road_traffic_density'] != 'NaN', :].copy()
+    df1 = df1.loc[df1['City'] != 'NaN', :].copy()
+    df1 = df1.loc[df1['Festival'] != 'NaN ', :].copy()
+
+    # 7. Limpando a coluna de time taken
+    df1['Time_taken(min)'] = df1['Time_taken(min)'].apply(lambda x: x.split('(min) ')[1])
+    df1['Time_taken(min)'] = df1['Time_taken(min)'].astype(int)
+
+    return df1
+
+def top_delivers(df1, top_asc):
+    df2 = (df1.loc[:, ['Delivery_person_ID', 'City','Time_taken(min)']]
+              .groupby(['City', 'Delivery_person_ID'])
+              .min()
+              .sort_values(['City','Time_taken(min)'], ascending=top_asc)
+              .reset_index())
+    
+    df_aux1 = df2.loc[df2['City'] == 'Metropolitian', :].head(10)
+    df_aux2 = df2.loc[df2['City'] == 'Urban', :].head(10)
+    df_aux3 = df2.loc[df2['City'] == 'Semi-Urban', :].head(10)
+    
+    df3 = pd.concat([df_aux1, df_aux2, df_aux3]).reset_index(drop=True)
+    
+    return df3
+
+
+# ======================================
+# Inicio da EStrutura logica do Código
+# ======================================
 
 home_path = os.path.dirname(os.path.abspath(__file__))
 #print(os.getcwd())
 df = pd.read_csv(os.path.join(home_path, 'datasets', 'train.csv'))
 
 df1 = df.copy()
+# Limpando os dados
+df1 = clean_code(df1)
 
-# 1. convertendo a coluna Age de texto para numero
-linhas_selecionadas = df1['Delivery_person_Age'] != 'NaN '
-df1 = df1.loc[linhas_selecionadas, :].copy()
-
-df1['Delivery_person_Age'] = df1['Delivery_person_Age'].astype(int)
-
-# 2. convertendo a coluna Ratings de texto para numero decimal (float)
-df1['Delivery_person_Ratings'] = df1['Delivery_person_Ratings'].astype(float)
-
-# 3. convertendo a coluna order_date de texto para data
-df1['Order_Date'] = pd.to_datetime(df1['Order_Date'], format='%d-%m-%Y')
-
-# 4. convertendo multiple_deliveries de texto para numero inteiro (int)
-linhas_selecionadas = df1['multiple_deliveries'] != 'NaN '
-df1 = df1.loc[linhas_selecionadas, :].copy()
-
-df1['multiple_deliveries'] = df1['multiple_deliveries'].astype(int)
-
-
-# 5. Removendo os espacos dentro de strings/texto/object
-df1.loc[:, 'ID'] = df1.loc[:, 'ID'].str.strip()
-df1.loc[:, 'Road_traffic_density'] = df1.loc[:, 'Road_traffic_density'].str.strip()
-df1.loc[:, 'Type_of_order'] = df1.loc[:, 'Type_of_order'].str.strip()
-df1.loc[:, 'Type_of_vehicle'] = df1.loc[:, 'Type_of_vehicle'].str.strip()
-df1.loc[:, 'City'] = df1.loc[:, 'City'].str.strip()
-df1.loc[:, 'Festival'] = df1.loc[:, 'Festival'].str.strip()
-
-# 6. Removend do NaN
-df1 = df1.loc[df1['Road_traffic_density'] != 'NaN', :].copy()
-df1 = df1.loc[df1['City'] != 'NaN', :].copy()
-df1 = df1.loc[df1['Festival'] != 'NaN ', :].copy()
-
-# 7. Limpando a coluna de time taken
-df1['Time_taken(min)'] = df1['Time_taken(min)'].apply(lambda x: x.split('(min) ')[1])
-df1['Time_taken(min)'] = df1['Time_taken(min)'].astype(int)
-
-# ====================================
-# Barra lateral
-# ====================================
-
-st.header('Marketplace - Visão Entregadores')
-
-# image_path = 'logo.png'
-# image = Image.open(image_path)
-# st.sidebar.image(image,width=120)
-
-st.sidebar.markdown('# Cury Company')
-st.sidebar.markdown('## Fastest Delivery un Town')
-st.sidebar.markdown("""---""")
-
-st.sidebar.markdown("## Selecione uma data limite")
-
-date_slider = st.sidebar.slider(
-                'Até qual valor?',
-                value=pd.datetime(2022,4,6),
-                min_value=pd.datetime(2022,2,11),
-                max_value=pd.datetime(2022,4,13),
-                format='DD-MM-YYYY')
-
-st.sidebar.markdown("""---""")
-
-traffic_options = st.sidebar.multiselect(
-                    'Quais as condiçoes de trânsito',
-                    ['Low', 'Medium', 'High', 'Jam'], 
-                    default=['Low', 'Medium', 'High', 'Jam']
-)
-
-st.sidebar.markdown("""---""")
-st.sidebar.markdown('### Powered by Comunidade DS')
+date_slider, traffic_options = sidebar()
 
 # Filtros de Data
 linhas_selecionadas = df1['Order_Date'] < date_slider
@@ -95,6 +136,8 @@ df1 = df1.loc[linhas_selecionadas, :]
 # ====================================
 # Layout no Streamlit
 # ====================================
+
+st.header('Marketplace - Visão Entregadores')
 
 with st.container():
     st.title('Overroll Metrics')
@@ -167,26 +210,11 @@ with st.container():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader('Top Entregadores mais rapidos')
-
-        df2 = df1.loc[:, ['Delivery_person_ID', 'City','Time_taken(min)']].groupby(['City', 'Delivery_person_ID']).min().sort_values(['City','Time_taken(min)'], ascending=True).reset_index()
-
-        df_aux1 = df2.loc[df2['City'] == 'Metropolitian', :].head(10)
-        df_aux2 = df2.loc[df2['City'] == 'Urban', :].head(10)
-        df_aux3 = df2.loc[df2['City'] == 'Semi-Urban', :].head(10)
-
-        df3 = pd.concat([df_aux1, df_aux2, df_aux3]).reset_index(drop=True)
+        st.markdown('##### Top Entregadores mais rapidos')
+        df3 = top_delivers(df1, top_asc=True)
         st.dataframe(df3)
 
     with col2:
-        st.subheader('Top entregadores mais lentos')
-        df2 = df1.loc[:, ['Delivery_person_ID', 'City','Time_taken(min)']].groupby(['City', 'Delivery_person_ID']).min().sort_values(['City','Time_taken(min)'], ascending=True).reset_index()
-
-        df_aux1 = df2.loc[df2['City'] == 'Metropolitian', :].head(10)
-        df_aux2 = df2.loc[df2['City'] == 'Urban', :].head(10)
-        df_aux3 = df2.loc[df2['City'] == 'Semi-Urban', :].head(10)
-
-        df3 = pd.concat([df_aux1, df_aux2, df_aux3]).reset_index(drop=True)
+        st.markdown('##### Top entregadores mais lentos')
+        df3 = top_delivers(df1, top_asc=False)
         st.dataframe(df3)
-
-
