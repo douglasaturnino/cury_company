@@ -1,3 +1,6 @@
+
+<img src="https://user-images.githubusercontent.com/95532957/209002293-ed185de0-46bc-4b89-9c5c-a0bce61c4b55.png" width=70% height=70%/>
+
 # O problema de negócio
 
 A Cury Company é uma empresa de tecnologia que criou um aplicativo que conecta restaurantes,entregadores e pessoas.
