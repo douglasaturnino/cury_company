@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import streamlit as st
 from util import util as ut
-from graficos_entregadores import GraficosEntregadores
+from graficos.graficos_entregadores import GraficosEntregadores
 
 # ======================================
 # Inicio da EStrutura logica do Código

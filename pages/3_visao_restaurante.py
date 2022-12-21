@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import streamlit as st
 from util import util as ut
-from graficos_restaurante import GraficosRestaurante
+from graficos.graficos_restaurante import GraficosRestaurante
 
 # ======================================
 # Inicio da EStrutura logica do Código
