@@ -98,5 +98,7 @@ Da visão da Empresa, podemos concluir que o número de pedidos cresceu entre a 
 
 # 7. Próximo passos
 Reduzir o número de métricas.
+
 Criar novos filtros.
+
 Adicionar novas visões de negócio.
