@@ -24,11 +24,6 @@ RUN pip install -r requirements.txt
 
 # Final stage:
 FROM ${python}
-# Install the runtime-only C library dependencies we need.
-RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive \
-    apt-get install --no-install-recommends --assume-yes \
-      libpq5
 
 # Copy the virtual environment from the first stage.
 COPY --from=build /venv /venv
